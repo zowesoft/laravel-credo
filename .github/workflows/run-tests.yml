@@ -2,9 +2,6 @@ name: run-tests
 
 on:
   push:
-    paths:
-      - 'packages/zowesoft/laravel-credo/**'
-      - '.github/workflows/run-tests.yml'
   pull_request:
 
 jobs:
