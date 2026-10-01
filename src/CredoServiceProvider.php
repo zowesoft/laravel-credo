@@ -15,6 +15,7 @@ class CredoServiceProvider extends ServiceProvider
             return new CredoManager(
                 $app->make('config'),
                 Http::getFacadeRoot(),
+                $app,
             );
         });
 

@@ -3,8 +3,10 @@
 namespace ZoweSoft\LaravelCredo;
 
 use Illuminate\Config\Repository;
+use Illuminate\Contracts\Container\Container;
 use Illuminate\Http\Client\Factory;
 use Illuminate\Support\Traits\ForwardsCalls;
+use Psr\Log\LoggerInterface;
 use ZoweSoft\LaravelCredo\Contracts\PaymentGateway;
 use ZoweSoft\LaravelCredo\Data\Transaction;
 use ZoweSoft\LaravelCredo\Exceptions\InvalidConfigurationException;
@@ -17,10 +19,15 @@ class CredoManager implements PaymentGateway
 
     protected ?Client $client = null;
 
+    protected ?Container $app = null;
+
     public function __construct(
         protected Repository $config,
         protected Factory $http,
-    ) {}
+        ?Container $app = null,
+    ) {
+        $this->app = $app;
+    }
 
     public function mode(): string
     {
@@ -109,6 +116,20 @@ class CredoManager implements PaymentGateway
     public function retryBaseDelayMs(): int
     {
         return max(0, (int) $this->config->get('credo.retry_base_delay_ms', 1000));
+    }
+
+    /**
+     * Optional PSR-3 logger for request logging, or null when disabled.
+     */
+    public function logger(): ?LoggerInterface
+    {
+        $channel = $this->config->get('credo.log_channel');
+
+        if (! is_string($channel) || trim($channel) === '' || strcasecmp($channel, 'null') === 0) {
+            return null;
+        }
+
+        return $this->app?->make('log')->channel($channel);
     }
 
     public function config(): Repository
