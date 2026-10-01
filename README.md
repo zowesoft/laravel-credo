@@ -184,17 +184,19 @@ Always verify server-side before fulfilling an order — never trust the redirec
 ```php
 $transaction = Credo::verify('vs_xxxxxxxxxxxx');
 
-// Note: Credo returns verify amounts in major units (naira, with decimals),
-// unlike the initialize request which takes kobo. amountEquals() compares
-// with a one-kobo tolerance:
-if ($transaction->successful() && $transaction->amountEquals(2500.00)) {
-    // mark order paid
+// One-call version of Credo's verification checklist: successful status,
+// expected amount (major units — verify responses are naira, not kobo),
+// expected currency, and your business reference. Pass null to skip a
+// check: matches(2500.00) validates just status + amount.
+if ($transaction->matches(2500.00, 'NGN', 'PG-APP-0001')) {
+    // mark order paid — status, amount, currency and reference all check out
 }
 ```
 
 `Transaction` exposes `credoReference`, `reference`, `amount`, `debitedAmount`,
 `feeAmount`, `settlementAmount`, `email`, `currency`, `status()` (a backed enum with
-labels), `successful()`, `metadataValue(string $key)` and the raw array.
+labels), `successful()`, `amountEquals(float)`, `matches(?amount, ?currency, ?reference)`
+(the verification checklist in one call), `metadataValue(string $key)` and the raw array.
 
 ### Webhooks
 
