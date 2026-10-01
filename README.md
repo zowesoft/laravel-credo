@@ -237,6 +237,53 @@ The manager is bound as a singleton and aliased as `credo`, so you can inject
 public function __construct(private \ZoweSoft\LaravelCredo\CredoManager $credo) {}
 ```
 
+### Error handling
+
+Every package exception extends `ZoweSoft\LaravelCredo\Exceptions\CredoException`, so a
+single `catch (CredoException)` covers everything the package throws itself. The one
+exception outside that tree is Laravel's `Illuminate\Http\Client\ConnectionException`,
+which surfaces when the connection itself fails on every retry attempt.
+
+| Exception | When it is thrown | Retry? |
+| --- | --- | --- |
+| `InvalidConfigurationException` | Keys missing, or a key prefix does not match the active mode — thrown before any HTTP call | No — fix your `.env` / config |
+| `RequestFailedException` | Credo answered with an error. `$e->httpStatus` (HTTP code), `$e->apiStatus` (Credo body status), `$e->errors` (the API's `error` array) | 429 and connection errors are retried automatically; once exhausted, queue the work for later. Other 4xx will never succeed on retry |
+| `InvalidSignatureException` | Webhook signature check failed or the body was not valid JSON | No — likely not from Credo; respond `401` (see [Webhooks](#webhooks)) |
+| `ConnectionException` | Timeout, DNS failure or connection reset, after all retries | Yes — network failures are always safe to retry |
+
+Map API errors to friendly, actionable messages for customers — never surface the raw
+`$e->errors` array (per Credo's error-handling guidance):
+
+```php
+use Illuminate\Http\Client\ConnectionException;
+use ZoweSoft\LaravelCredo\Exceptions\InvalidConfigurationException;
+use ZoweSoft\LaravelCredo\Exceptions\RequestFailedException;
+
+try {
+    $transaction = $credo->verify($transRef);
+} catch (InvalidConfigurationException $e) {
+    report($e); // misconfiguration is a developer problem, not a user problem
+
+    return back()->withError('Payment is temporarily unavailable.');
+} catch (ConnectionException $e) {
+    VerifyPayment::dispatch($transRef)->delay(now()->addMinutes(5)); // retry later
+
+    return back()->withError('Payment service unreachable — try again shortly.');
+} catch (RequestFailedException $e) {
+    return match (true) {
+        $e->httpStatus === 404 => back()->withError('We could not find that payment.'),
+        $e->httpStatus === 429 => back()->withError('Too many requests — try again in a moment.'),
+        $e->httpStatus >= 500 => back()->withError('Payment service error — try again shortly.'),
+        default => back()->withError('Payment could not be verified.'),
+    };
+}
+```
+
+Two habits worth keeping: log every caught exception with the `transRef` for
+reconciliation (enable [request logging](#request-logging-opt-in) and most of that
+comes for free), and remember that retried requests are already handled for you —
+these catches only fire once all automatic attempts are exhausted.
+
 ### Testing your app
 
 The package uses Laravel's HTTP client, so `Http::fake()` works out of the box:
