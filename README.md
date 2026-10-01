@@ -1,6 +1,6 @@
 # Zowesoft Laravel Credo
 
-[![run-tests](https://github.com/zowesoft/laravel-credo/actions/workflows/run-tests.yml/badge.svg)](https://github.com/zowesoft/laravel-credo/actions/workflows/run-tests.yml)
+[![Tests](https://github.com/zowesoft/laravel-credo/actions/workflows/tests.yml/badge.svg)](https://github.com/zowesoft/laravel-credo/actions/workflows/tests.yml)
 
 A fluent Laravel package for the [Credo](https://credocentral.com) payment gateway (credocentral.com / credodemo.com).
 
