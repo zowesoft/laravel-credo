@@ -19,12 +19,15 @@ class Retry
      * @param  callable(): TReturn  $request
      * @return TReturn
      */
-    public static function attempt(callable $request, CredoManager $manager): mixed
+    public static function attempt(callable $request, CredoManager $manager, ?callable $onAttempt = null): mixed
     {
         $maxAttempts = $manager->retryMaxAttempts();
         $baseDelayMs = $manager->retryBaseDelayMs();
 
         for ($attempt = 1; ; $attempt++) {
+            if ($onAttempt !== null) {
+                $onAttempt($attempt);
+            }
             try {
                 $response = $request();
 

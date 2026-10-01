@@ -69,6 +69,8 @@ CREDO_CALLBACK_URL=https://yourapp.com/credo/callback
 CREDO_TIMEOUT=30
 CREDO_RETRY_MAX_ATTEMPTS=3
 CREDO_RETRY_BASE_DELAY_MS=1000
+# Optional request logging (set to a log channel name):
+# CREDO_LOG_CHANNEL=credo
 ```
 
 ### Key validation
@@ -107,6 +109,24 @@ and `CREDO_RETRY_BASE_DELAY_MS`):
 If every attempt fails, the original `ConnectionException` (network) or
 `RequestFailedException` (API error) is thrown, so you can queue the work for a
 later retry — a scheduled job re-verifying pending transactions is a natural fit.
+
+### Request logging (opt-in)
+
+Set `log_channel` in the published config (env: `CREDO_LOG_CHANNEL`) to a log channel
+name — `daily`, `stderr`, or a dedicated channel in your `config/logging.php` — and
+every API call writes one record:
+
+```
+[2026-10-01 12:00:00] local.INFO: Credo API request {"method":"GET","path":"/transaction/vs_xxx/verify","status":200,"duration_ms":148,"attempts":2,"transRef":"vs_xxx"}
+```
+
+Each record carries the HTTP method, path, status, duration in milliseconds, the
+retry-aware attempt count, and the `transRef` when it is known — the verify path
+itself, or the `data.transRef` of an initialize response. Connection failures that
+survive all retry attempts are logged at error level instead.
+
+Leave the channel unset (`CREDO_LOG_CHANNEL=null`) to disable logging entirely; the
+package makes no log calls at all in that case.
 
 ## Usage
 
