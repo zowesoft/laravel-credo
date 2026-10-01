@@ -7,6 +7,7 @@ use Illuminate\Http\Client\Response;
 use ZoweSoft\LaravelCredo\Data\Transaction;
 use ZoweSoft\LaravelCredo\Exceptions\RequestFailedException;
 use ZoweSoft\LaravelCredo\Responses\InitializeResponse;
+use ZoweSoft\LaravelCredo\Support\Retry;
 
 class Client
 {
@@ -22,9 +23,12 @@ class Client
             $payload['bearer'] = 0;
         }
 
-        $response = $this->request()
-            ->withHeaders(['Authorization' => $this->manager->publicKey()])
-            ->post('/transaction/initialize', $payload);
+        $response = Retry::attempt(
+            fn () => $this->request()
+                ->withHeaders(['Authorization' => $this->manager->publicKey()])
+                ->post('/transaction/initialize', $payload),
+            $this->manager,
+        );
 
         return $this->hydrate($response, fn (array $data) => InitializeResponse::fromArray($data, $payload));
     }
@@ -33,9 +37,12 @@ class Client
     {
         $this->manager->verifyConfiguration();
 
-        $response = $this->request()
-            ->withHeaders(['Authorization' => $this->manager->secretKey()])
-            ->get("/transaction/{$reference}/verify");
+        $response = Retry::attempt(
+            fn () => $this->request()
+                ->withHeaders(['Authorization' => $this->manager->secretKey()])
+                ->get("/transaction/{$reference}/verify"),
+            $this->manager,
+        );
 
         return $this->hydrate($response, fn (array $data) => Transaction::fromArray($data));
     }

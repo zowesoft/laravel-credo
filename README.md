@@ -67,6 +67,8 @@ CREDO_SECRET_KEY=0PRI-...
 # Optional:
 CREDO_CALLBACK_URL=https://yourapp.com/credo/callback
 CREDO_TIMEOUT=30
+CREDO_RETRY_MAX_ATTEMPTS=3
+CREDO_RETRY_BASE_DELAY_MS=1000
 ```
 
 ### Key validation
@@ -85,6 +87,26 @@ an entry to `""` to skip that check), or disable the check entirely with
 The demo and live API base URLs can be overridden in the published config (`base_urls`
 or the `CREDO_DEMO_BASE_URL` / `CREDO_LIVE_BASE_URL` env vars) in case the endpoints
 move.
+
+### Retries (rate limits & network failures)
+
+Following Credo's API guidance, requests are retried automatically with exponential
+backoff when Credo answers `429 Too Many Requests` or when the connection fails
+outright (timeout, DNS error, connection reset). Any other client error — 401, 403,
+404, 422 — is thrown immediately as `RequestFailedException`, since retrying it can
+never succeed.
+
+Two published-config keys control the behaviour (env vars `CREDO_RETRY_MAX_ATTEMPTS`
+and `CREDO_RETRY_BASE_DELAY_MS`):
+
+| Key | Default | Meaning |
+| --- | ------- | ------- |
+| `retry_max_attempts` | `3` | Total attempts per request, including the first. Set to `1` to disable retries. |
+| `retry_base_delay_ms` | `1000` | Delay before the first retry; each further retry doubles it (1s, 2s, …). |
+
+If every attempt fails, the original `ConnectionException` (network) or
+`RequestFailedException` (API error) is thrown, so you can queue the work for a
+later retry — a scheduled job re-verifying pending transactions is a natural fit.
 
 ## Usage
 
