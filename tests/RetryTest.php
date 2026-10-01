@@ -52,31 +52,39 @@ it('retries a connection failure and succeeds', function () {
     config()->set('credo.retry_max_attempts', 3);
     config()->set('credo.retry_base_delay_ms', 0);
 
-    Http::fake([
-        'https://api.credodemo.com/transaction/vs_conn/verify' => Http::sequence()
-            ->pushFailedConnection('cURL error 28')
-            ->push([
-                'status' => 200,
-                'message' => 'ok',
-                'data' => ['transRef' => 'vs_conn', 'businessRef' => 'R', 'status' => 0, 'transAmount' => 100.0],
-            ]),
-    ]);
+    $connectionFailures = 0;
+
+    Http::fake(function ($request) use (&$connectionFailures) {
+        if (str_contains($request->url(), '/transaction/vs_conn/verify') && $connectionFailures < 1) {
+            $connectionFailures++;
+
+            throw new ConnectionException('cURL error 28: Connection timed out');
+        }
+
+        return Http::response([
+            'status' => 200,
+            'message' => 'ok',
+            'data' => ['transRef' => 'vs_conn', 'businessRef' => 'R', 'status' => 0, 'transAmount' => 100.0],
+        ]);
+    });
 
     $transaction = Credo::verify('vs_conn');
 
-    expect($transaction->credoReference)->toBe('vs_conn');
-    Http::assertSentCount(2);
+    expect($transaction->credoReference)->toBe('vs_conn')
+        ->and($connectionFailures)->toBe(1);
 });
 
 it('throws the connection exception once every attempt fails', function () {
     config()->set('credo.retry_max_attempts', 2);
     config()->set('credo.retry_base_delay_ms', 0);
 
-    Http::fake([
-        'https://api.credodemo.com/transaction/vs_dead/verify' => Http::sequence()
-            ->pushFailedConnection('cURL error 6')
-            ->pushFailedConnection('cURL error 6'),
-    ]);
+    $attempts = 0;
+
+    Http::fake(function () use (&$attempts) {
+        $attempts++;
+
+        throw new ConnectionException('cURL error 6: Could not resolve host');
+    });
 
     try {
         Credo::verify('vs_dead');
@@ -85,7 +93,7 @@ it('throws the connection exception once every attempt fails', function () {
         expect($exception->getMessage())->toContain('cURL error 6');
     }
 
-    Http::assertSentCount(2);
+    expect($attempts)->toBe(2);
 });
 
 it('never retries other client errors like an invalid key', function () {
