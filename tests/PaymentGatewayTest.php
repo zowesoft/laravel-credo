@@ -28,11 +28,11 @@ it('initializes a payment with the public key and default bearer', function () {
         ->callbackUrl('https://portal.test/credo/callback')
         ->send();
 
-    expect($response)->toBeInstanceOf(InitializeResponse::class)
-        ->and($response->authorizationUrl)->toBe('https://pay.credocentral.com/checkout/xxx')
-        ->and($response->reference)->toBe('PG-APP-0001')
-        ->and($response->credoReference)->toBe('vs_test123')
-        ->and($response->crn)->toBe('0000298483');
+    expect($response)->toBeInstanceOf(InitializeResponse::class);
+    expect($response->authorizationUrl)->toBe('https://pay.credocentral.com/checkout/xxx');
+    expect($response->reference)->toBe('PG-APP-0001');
+    expect($response->credoReference)->toBe('vs_test123');
+    expect($response->crn)->toBe('0000298483');
 
     Http::assertSent(function ($request) {
         return $request->hasHeader('Authorization', TestCase::TEST_PUBLIC_KEY)
@@ -57,8 +57,8 @@ it('initializes from an array payload via the manager', function () {
         'currency' => 'NGN',
     ]);
 
-    expect($response->reference)->toBe('REF-1')
-        ->and($response->credoReference)->toBe('vs_1');
+    expect($response->reference)->toBe('REF-1');
+    expect($response->credoReference)->toBe('vs_1');
 });
 
 it('falls back to the configured callback url when the builder omits one', function () {
@@ -106,10 +106,10 @@ it('throws a request failed exception with api details on error', function () {
         Credo::payment()->amount(100)->email('a@b.com')->send();
         $this->fail('Expected RequestFailedException was not thrown.');
     } catch (RequestFailedException $exception) {
-        expect($exception->httpStatus)->toBe(401)
-            ->and($exception->apiStatus)->toBe(401)
-            ->and($exception->errors)->toBe(['error' => 'invalid_key'])
-            ->and($exception->getMessage())->toContain('Invalid public key');
+        expect($exception->httpStatus)->toBe(401);
+        expect($exception->apiStatus)->toBe(401);
+        expect($exception->errors)->toBe(['error' => 'invalid_key']);
+        expect($exception->getMessage())->toContain('Invalid public key');
     }
 });
 
@@ -136,19 +136,19 @@ it('verifies a transaction with the secret key and maps the response', function 
 
     $transaction = Credo::verify('vs_test123');
 
-    expect($transaction)->toBeInstanceOf(Transaction::class)
-        ->and($transaction->credoReference)->toBe('vs_test123')
-        ->and($transaction->reference)->toBe('PG-APP-0001')
-        ->and($transaction->amount)->toBe(2500.0)
-        ->and($transaction->debitedAmount)->toBe(2637.5)
-        ->and($transaction->feeAmount)->toBe(137.5)
-        ->and($transaction->amountEquals(2500))->toBeTrue()
-        ->and($transaction->amountEquals(2499.99))->toBeFalse()
-        ->and($transaction->email)->toBe('student@example.com')
-        ->and($transaction->currency)->toBe('NGN')
-        ->and($transaction->successful())->toBeTrue()
-        ->and($transaction->status()->label())->toBe('Successful')
-        ->and($transaction->metadataValue('matric'))->toBe('ENG/2024/001');
+    expect($transaction)->toBeInstanceOf(Transaction::class);
+    expect($transaction->credoReference)->toBe('vs_test123');
+    expect($transaction->reference)->toBe('PG-APP-0001');
+    expect($transaction->amount)->toBe(2500.0);
+    expect($transaction->debitedAmount)->toBe(2637.5);
+    expect($transaction->feeAmount)->toBe(137.5);
+    expect($transaction->amountEquals(2500))->toBeTrue();
+    expect($transaction->amountEquals(2499.99))->toBeFalse();
+    expect($transaction->email)->toBe('student@example.com');
+    expect($transaction->currency)->toBe('NGN');
+    expect($transaction->successful())->toBeTrue();
+    expect($transaction->status()->label())->toBe('Successful');
+    expect($transaction->metadataValue('matric'))->toBe('ENG/2024/001');
 
     Http::assertSent(fn ($request) => $request->hasHeader('Authorization', TestCase::TEST_SECRET_KEY));
 });
@@ -164,8 +164,8 @@ it('maps unsuccessful statuses on verification', function () {
 
     $transaction = Credo::verify('vs_failed');
 
-    expect($transaction->successful())->toBeFalse()
-        ->and($transaction->status()->label())->toBe('Failed');
+    expect($transaction->successful())->toBeFalse();
+    expect($transaction->status()->label())->toBe('Failed');
 });
 
 it('hides the secret key from verification requests', function () {

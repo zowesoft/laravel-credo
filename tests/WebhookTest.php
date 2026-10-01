@@ -30,9 +30,9 @@ function webhookPayload(): array
 it('computes and verifies the credo signature', function () {
     $signature = hash('sha512', TestCase::TEST_SECRET_KEY.'700607002190001');
 
-    expect(Credo::webhooks()->verifySignature($signature, '700607002190001'))->toBeTrue()
-        ->and(Credo::webhooks()->verifySignature(strtoupper($signature), '700607002190001'))->toBeTrue()
-        ->and(Credo::webhooks()->verifySignature('  '.$signature.'  ', '700607002190001'))->toBeTrue();
+    expect(Credo::webhooks()->verifySignature($signature, '700607002190001'))->toBeTrue();
+    expect(Credo::webhooks()->verifySignature(strtoupper($signature), '700607002190001'))->toBeTrue();
+    expect(Credo::webhooks()->verifySignature('  '.$signature.'  ', '700607002190001'))->toBeTrue();
 });
 
 it('rejects a signature from a different secret', function () {
@@ -44,8 +44,8 @@ it('rejects a signature from a different secret', function () {
 it('rejects verification without keys or business code', function () {
     config()->set('credo.secret_key', null);
 
-    expect(Credo::webhooks()->verifySignature('anything', '700607002190001'))->toBeFalse()
-        ->and(Credo::webhooks()->verifySignature(hash('sha512', TestCase::TEST_SECRET_KEY), ''))->toBeFalse();
+    expect(Credo::webhooks()->verifySignature('anything', '700607002190001'))->toBeFalse();
+    expect(Credo::webhooks()->verifySignature(hash('sha512', TestCase::TEST_SECRET_KEY), ''))->toBeFalse();
 });
 
 it('validates a payload and returns a typed event', function () {
@@ -54,14 +54,14 @@ it('validates a payload and returns a typed event', function () {
 
     $event = Credo::webhooks()->validate($signature, $payload);
 
-    expect($event)->toBeInstanceOf(WebhookEvent::class)
-        ->and($event->event)->toBe('transaction.successful')
-        ->and($event->isSuccessful())->toBeTrue()
-        ->and($event->isFailed())->toBeFalse()
-        ->and($event->businessCode())->toBe('700607002190001')
-        ->and($event->transaction()->reference)->toBe('PG-APP-0001')
-        ->and($event->transaction()->credoReference)->toBe('cI9H00N2AB02Qb0s69Mj')
-        ->and($event->transaction()->successful())->toBeTrue();
+    expect($event)->toBeInstanceOf(WebhookEvent::class);
+    expect($event->event)->toBe('transaction.successful');
+    expect($event->isSuccessful())->toBeTrue();
+    expect($event->isFailed())->toBeFalse();
+    expect($event->businessCode())->toBe('700607002190001');
+    expect($event->transaction()->reference)->toBe('PG-APP-0001');
+    expect($event->transaction()->credoReference)->toBe('cI9H00N2AB02Qb0s69Mj');
+    expect($event->transaction()->successful())->toBeTrue();
 });
 
 it('throws on a tampered payload', function () {
@@ -91,8 +91,8 @@ it('captures the inbound request content and header', function () {
 
     $event = Credo::webhooks()->capture();
 
-    expect($event->isSuccessful())->toBeTrue()
-        ->and($event->transaction()->email)->toBe('customer@example.com');
+    expect($event->isSuccessful())->toBeTrue();
+    expect($event->transaction()->email)->toBe('customer@example.com');
 });
 
 it('throws on malformed inbound json', function () {

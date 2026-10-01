@@ -43,22 +43,22 @@ it('includes optional fields only when set', function () {
         ->customField('Programme', 'programme', 'Computer Science')
         ->toArray();
 
-    expect($payload['reference'])->toBe('PG-APP-0001')
-        ->and($payload['callbackUrl'])->toBe('https://portal.test/credo/callback')
-        ->and($payload['customerFirstName'])->toBe('Ada')
-        ->and($payload['customerLastName'])->toBe('Obi')
-        ->and($payload['customerPhoneNumber'])->toBe('2348012345678')
-        ->and($payload['narration'])->toBe('Application fee')
-        ->and($payload['channels'])->toBe(['CARD', 'BANK'])
-        ->and($payload['metadata'])->toBe([
-            'matric' => 'ENG/2024/001',
-            'customFields' => [
-                ['display_name' => 'Programme', 'variable_name' => 'programme', 'value' => 'Computer Science'],
-            ],
-        ])
-        ->and($payload)->not->toHaveKey('serviceCode')
-        ->and($payload)->not->toHaveKey('splitConfiguration')
-        ->and($payload)->not->toHaveKey('pauseSettlement');
+    expect($payload['reference'])->toBe('PG-APP-0001');
+    expect($payload['callbackUrl'])->toBe('https://portal.test/credo/callback');
+    expect($payload['customerFirstName'])->toBe('Ada');
+    expect($payload['customerLastName'])->toBe('Obi');
+    expect($payload['customerPhoneNumber'])->toBe('2348012345678');
+    expect($payload['narration'])->toBe('Application fee');
+    expect($payload['channels'])->toBe(['CARD', 'BANK']);
+    expect($payload['metadata'])->toBe([
+        'matric' => 'ENG/2024/001',
+        'customFields' => [
+            ['display_name' => 'Programme', 'variable_name' => 'programme', 'value' => 'Computer Science'],
+        ],
+    ]);
+    expect(array_key_exists('serviceCode', $payload))->toBeFalse();
+    expect(array_key_exists('splitConfiguration', $payload))->toBeFalse();
+    expect(array_key_exists('pauseSettlement', $payload))->toBeFalse();
 });
 
 it('supports enums for currency, bearer and channels', function () {
@@ -70,16 +70,16 @@ it('supports enums for currency, bearer and channels', function () {
         ->channels([Channel::CARD])
         ->toArray();
 
-    expect($payload['currency'])->toBe('USD')
-        ->and($payload['bearer'])->toBe(1)
-        ->and($payload['channels'])->toBe(['CARD']);
+    expect($payload['currency'])->toBe('USD');
+    expect($payload['bearer'])->toBe(1);
+    expect($payload['channels'])->toBe(['CARD']);
 });
 
 it('flips the fee bearer with helper methods', function () {
     $builder = Credo::payment()->amount(100)->email('a@b.com');
 
-    expect($builder->customerBearsFee()->toArray()['bearer'])->toBe(0)
-        ->and($builder->merchantBearsFee()->toArray()['bearer'])->toBe(1);
+    expect($builder->customerBearsFee()->toArray()['bearer'])->toBe(0);
+    expect($builder->merchantBearsFee()->toArray()['bearer'])->toBe(1);
 });
 
 it('flags virtual account generation and settlement pausing', function () {
@@ -90,9 +90,9 @@ it('flags virtual account generation and settlement pausing', function () {
         ->pauseSettlement('2026-03-15')
         ->toArray();
 
-    expect($payload['initializeAccount'])->toBe(1)
-        ->and($payload['pauseSettlement'])->toBe(1)
-        ->and($payload['pauseSettlementDate'])->toBe('2026-03-15');
+    expect($payload['initializeAccount'])->toBe(1);
+    expect($payload['pauseSettlement'])->toBe(1);
+    expect($payload['pauseSettlementDate'])->toBe('2026-03-15');
 });
 
 it('accepts string currency and bearer values', function () {
@@ -103,6 +103,6 @@ it('accepts string currency and bearer values', function () {
         ->bearer(1)
         ->toArray();
 
-    expect($payload['currency'])->toBe('USD')
-        ->and($payload['bearer'])->toBe(1);
+    expect($payload['currency'])->toBe('USD');
+    expect($payload['bearer'])->toBe(1);
 });

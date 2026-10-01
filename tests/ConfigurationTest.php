@@ -1,39 +1,51 @@
 <?php
 
 use Illuminate\Http\Client\Factory;
+use Illuminate\Support\Facades\Http;
 use ZoweSoft\LaravelCredo\Client;
 use ZoweSoft\LaravelCredo\CredoManager;
 use ZoweSoft\LaravelCredo\Exceptions\InvalidConfigurationException;
 use ZoweSoft\LaravelCredo\Facades\Credo;
 use ZoweSoft\LaravelCredo\Tests\TestCase;
 
+function credoConfigurationIsValid(): bool
+{
+    try {
+        Credo::verifyConfiguration();
+
+        return true;
+    } catch (InvalidConfigurationException $exception) {
+        return false;
+    }
+}
+
 it('boots the package and resolves the manager via the facade', function () {
-    expect(Credo::mode())->toBe('DEMO')
-        ->and(Credo::isLiveMode())->toBeFalse()
-        ->and($this->app->make(CredoManager::class))->toBeInstanceOf(CredoManager::class);
+    expect(Credo::mode())->toBe('DEMO');
+    expect(Credo::isLiveMode())->toBeFalse();
+    expect($this->app->make(CredoManager::class))->toBeInstanceOf(CredoManager::class);
 });
 
 it('binds the manager as a singleton sharing the http factory', function () {
     $first = $this->app->make(CredoManager::class);
     $second = $this->app->make(CredoManager::class);
 
-    expect($first)->toBe($second)
-        ->and($first->http())->toBe($this->app->make(Factory::class));
+    expect($first)->toBe($second);
+    expect($first->http())->toBe(Http::getFacadeRoot());
 });
 
 it('targets the demo api in demo mode', function () {
-    expect(Credo::baseUrl())->toBe('https://api.credodemo.com')
-        ->and(Credo::publicKey())->toBe(TestCase::TEST_PUBLIC_KEY)
-        ->and(Credo::secretKey())->toBe(TestCase::TEST_SECRET_KEY);
+    expect(Credo::baseUrl())->toBe('https://api.credodemo.com');
+    expect(Credo::publicKey())->toBe(TestCase::TEST_PUBLIC_KEY);
+    expect(Credo::secretKey())->toBe(TestCase::TEST_SECRET_KEY);
 });
 
 it('targets the live api in live mode while keeping the same key pair', function () {
     config()->set('credo.mode', 'LIVE');
 
-    expect(Credo::mode())->toBe('LIVE')
-        ->and(Credo::baseUrl())->toBe('https://api.credocentral.com')
-        ->and(Credo::publicKey())->toBe(TestCase::TEST_PUBLIC_KEY)
-        ->and(Credo::secretKey())->toBe(TestCase::TEST_SECRET_KEY);
+    expect(Credo::mode())->toBe('LIVE');
+    expect(Credo::baseUrl())->toBe('https://api.credocentral.com');
+    expect(Credo::publicKey())->toBe(TestCase::TEST_PUBLIC_KEY);
+    expect(Credo::secretKey())->toBe(TestCase::TEST_SECRET_KEY);
 });
 
 it('allows base urls to be overridden per mode', function () {
@@ -50,13 +62,13 @@ it('allows base urls to be overridden per mode', function () {
 it('accepts keys matching the active mode prefixes', function () {
     config()->set('credo.mode', 'DEMO');
 
-    expect(fn () => Credo::verifyConfiguration())->not->toThrow(InvalidConfigurationException::class);
+    expect(credoConfigurationIsValid())->toBeTrue();
 
     config()->set('credo.mode', 'LIVE');
     config()->set('credo.public_key', TestCase::LIVE_PUBLIC_KEY);
     config()->set('credo.secret_key', TestCase::LIVE_SECRET_KEY);
 
-    expect(fn () => Credo::verifyConfiguration())->not->toThrow(InvalidConfigurationException::class);
+    expect(credoConfigurationIsValid())->toBeTrue();
 });
 
 it('rejects a demo key used in live mode', function () {
@@ -82,18 +94,18 @@ it('can disable key validation', function () {
     config()->set('credo.mode', 'LIVE');
     config()->set('credo.validate_keys', false);
 
-    expect(fn () => Credo::verifyConfiguration())->not->toThrow(InvalidConfigurationException::class);
+    expect(credoConfigurationIsValid())->toBeTrue();
 });
 
 it('allows prefixes to be overridden or blanked per role', function () {
     config()->set('credo.public_key', 'CUSTOM-PUB-KEY');
     config()->set('credo.key_prefixes.demo.public', 'CUSTOM-PUB');
 
-    expect(fn () => Credo::verifyConfiguration())->not->toThrow(InvalidConfigurationException::class);
+    expect(credoConfigurationIsValid())->toBeTrue();
 
     config()->set('credo.key_prefixes.demo.secret', '');
 
-    expect(fn () => Credo::verifyConfiguration())->not->toThrow(InvalidConfigurationException::class);
+    expect(credoConfigurationIsValid())->toBeTrue();
 });
 
 it('throws when keys are missing', function () {
