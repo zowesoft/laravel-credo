@@ -28,7 +28,7 @@ class CredoManager implements PaymentGateway
 
     public function isLiveMode(): bool
     {
-        return strtoupper((string) $this->config->string('credo.mode', 'DEMO')) === 'LIVE';
+        return strtoupper((string) $this->config->get('credo.mode', 'DEMO')) === 'LIVE';
     }
 
     public function baseUrl(): string
@@ -91,7 +91,7 @@ class CredoManager implements PaymentGateway
 
     public function timeout(): int
     {
-        return (int) $this->config->integer('credo.timeout', 30);
+        return (int) $this->config->get('credo.timeout', 30);
     }
 
     public function config(): Repository

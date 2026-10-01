@@ -15,7 +15,13 @@
     "authors": [
         {
             "name": "Zowesoft",
-            "homepage": "https://zowesoft.com"
+            "homepage": "https://zowesoft.com",
+            "role": "Owner"
+        },
+        {
+            "name": "Ifeanyichukwu John",
+            "email": "Ifeanyichukwujohn70@gmail.com",
+            "role": "Maintainer"
         }
     ],
     "require": {
@@ -23,6 +29,7 @@
         "illuminate/contracts": "^9.0|^10.0|^11.0|^12.0|^13.0"
     },
     "require-dev": {
+        "guzzlehttp/guzzle": "^7.8",
         "laravel/pint": "^1.13",
         "orchestra/testbench": "^7.22|^8.0|^9.0|^10.0|^11.0",
         "pestphp/pest": "^2.0|^3.0"
