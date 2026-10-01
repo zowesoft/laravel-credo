@@ -104,11 +104,13 @@ it('logs a single error record when every attempt fails to connect', function ()
 
     $logger->shouldNotReceive('info');
 
-    Http::fake([
-        'https://api.credodemo.com/transaction/vs_dead/verify' => Http::sequence()
-            ->pushFailedConnection('cURL error 6')
-            ->pushFailedConnection('cURL error 6'),
-    ]);
+    $attempts = 0;
+
+    Http::fake(function () use (&$attempts) {
+        $attempts++;
+
+        throw new ConnectionException('cURL error 6: Could not resolve host');
+    });
 
     try {
         Credo::verify('vs_dead');
