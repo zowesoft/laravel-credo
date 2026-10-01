@@ -22,6 +22,40 @@ You can publish the config file:
 php artisan vendor:publish --tag="credo-config"
 ```
 
+### Version support
+
+One stable release covers every supported Laravel major: the package requires
+`illuminate/contracts ^9.0|^10.0|^11.0|^12.0|^13.0`, so the same `composer require`
+works whether your project runs Laravel 9, 10, 11, 12 or 13.
+
+| Laravel | Development branch |
+|---|---|
+| 11.x – 13.x | `main` |
+| 10.x | `10.x` |
+| 9.x | `9.x` |
+
+Maintenance branches exist to run the test suite against older majors with their
+matching dev tooling — the runtime package is identical on every branch.
+
+### Installing a development branch
+
+Packagist publishes each branch head as a mutable dev version (`dev-main`,
+`10.x-dev`, `9.x-dev`). To try unreleased changes:
+
+```bash
+composer require zowesoft/laravel-credo:dev-10.x@dev
+```
+
+The `@dev` flag is required because branch snapshots are not stable releases. Branch
+heads move as work is pushed, so avoid pinning production apps to one.
+
+### Maintenance releases
+
+Bugfixes for older majors land on their maintenance branch and are tagged there
+(for example `v1.0.1` on `10.x`). Packagist indexes tags from any branch, so a
+`^1.0` constraint automatically receives the newest release that supports your
+Laravel version.
+
 ## Configuration
 
 Add your keys to `.env`. You use one key pair per environment — swap the keys when you go live.
