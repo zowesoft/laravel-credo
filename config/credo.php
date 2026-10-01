@@ -100,4 +100,24 @@ return [
 
     'timeout' => env('CREDO_TIMEOUT', 30),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Retries (Rate Limits & Network Failures)
+    |--------------------------------------------------------------------------
+    |
+    | Credo's API docs recommend retrying with exponential backoff when you
+    | are rate limited (HTTP 429) or when the connection itself fails
+    | (timeout, DNS error, connection reset). Other client errors (401, 403,
+    | 404, 422) are never retried - they fail immediately as a
+    | RequestFailedException.
+    |
+    | retry_max_attempts: total attempts per request (1 disables retries).
+    | retry_base_delay_ms: delay before the first retry; each further retry
+    | doubles it (1s, 2s, 4s for the 1000ms default).
+    |
+    */
+
+    'retry_max_attempts' => env('CREDO_RETRY_MAX_ATTEMPTS', 3),
+    'retry_base_delay_ms' => env('CREDO_RETRY_BASE_DELAY_MS', 1000),
+
 ];

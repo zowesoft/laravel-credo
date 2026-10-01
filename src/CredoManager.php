@@ -9,6 +9,7 @@ use ZoweSoft\LaravelCredo\Contracts\PaymentGateway;
 use ZoweSoft\LaravelCredo\Data\Transaction;
 use ZoweSoft\LaravelCredo\Exceptions\InvalidConfigurationException;
 use ZoweSoft\LaravelCredo\Responses\InitializeResponse;
+use ZoweSoft\LaravelCredo\Support\Retry;
 
 class CredoManager implements PaymentGateway
 {
@@ -92,6 +93,22 @@ class CredoManager implements PaymentGateway
     public function timeout(): int
     {
         return (int) $this->config->get('credo.timeout', 30);
+    }
+
+    /**
+     * Total attempts per request (including the first). 1 disables retries.
+     */
+    public function retryMaxAttempts(): int
+    {
+        return max(1, (int) $this->config->get('credo.retry_max_attempts', 3));
+    }
+
+    /**
+     * Delay in milliseconds before the first retry; doubles on each further retry.
+     */
+    public function retryBaseDelayMs(): int
+    {
+        return max(0, (int) $this->config->get('credo.retry_base_delay_ms', 1000));
     }
 
     public function config(): Repository
