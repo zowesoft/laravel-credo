@@ -2,7 +2,7 @@
 
 namespace ZoweSoft\LaravelCredo;
 
-use Illuminate\Http\Client\Factory;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\ServiceProvider;
 
 class CredoServiceProvider extends ServiceProvider
@@ -14,7 +14,7 @@ class CredoServiceProvider extends ServiceProvider
         $this->app->singleton(CredoManager::class, function ($app) {
             return new CredoManager(
                 $app->make('config'),
-                $app->make(Factory::class),
+                Http::getFacadeRoot(),
             );
         });
 
