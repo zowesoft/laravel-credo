@@ -70,6 +70,45 @@ class Transaction
         return abs($this->amount - $expected) < 0.01;
     }
 
+    /**
+     * Validate a verified transaction against the checklist from Credo's API
+     * documentation in one call: successful status, expected amount, expected
+     * currency and (optionally) the business reference you sent.
+     *
+     * The currency and reference checks are skipped when null is passed, so a
+     * plain status + amount check is simply:
+     *
+     *     $transaction->matches(2500.00);
+     *
+     * @param  float|null  $expectedAmount  In major units (naira), like the verify response.
+     * @param  string|null  $expectedCurrency  e.g. 'NGN' or 'USD'; null skips the check.
+     * @param  string|null  $expectedReference  Your business reference; null skips the check.
+     */
+    public function matches(
+        ?float $expectedAmount,
+        ?string $expectedCurrency = null,
+        ?string $expectedReference = null,
+    ): bool {
+        if (! $this->successful()) {
+            return false;
+        }
+
+        if ($expectedAmount !== null && ! $this->amountEquals($expectedAmount)) {
+            return false;
+        }
+
+        if ($expectedCurrency !== null
+            && strcasecmp($this->currency, $expectedCurrency) !== 0) {
+            return false;
+        }
+
+        if ($expectedReference !== null && $this->reference !== $expectedReference) {
+            return false;
+        }
+
+        return true;
+    }
+
     public function metadataValue(string $key): mixed
     {
         return $this->metadata[$key] ?? null;
