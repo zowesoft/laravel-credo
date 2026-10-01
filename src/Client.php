@@ -2,6 +2,7 @@
 
 namespace ZoweSoft\LaravelCredo;
 
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Response;
 use ZoweSoft\LaravelCredo\Data\Transaction;
@@ -23,12 +24,15 @@ class Client
             $payload['bearer'] = 0;
         }
 
-        $response = Retry::attempt(
-            fn () => $this->request()
-                ->withHeaders(['Authorization' => $this->manager->publicKey()])
-                ->post('/transaction/initialize', $payload),
-            $this->manager,
-        );
+        $response = $this->logged('POST', '/transaction/initialize', function (callable $onAttempt) use ($payload) {
+            return Retry::attempt(
+                fn () => $this->request()
+                    ->withHeaders(['Authorization' => $this->manager->publicKey()])
+                    ->post('/transaction/initialize', $payload),
+                $this->manager,
+                $onAttempt,
+            );
+        }, fn (Response $response) => $response->json('data.credoReference') ?? $response->json('data.transRef'));
 
         return $this->hydrate($response, fn (array $data) => InitializeResponse::fromArray($data, $payload));
     }
@@ -37,12 +41,15 @@ class Client
     {
         $this->manager->verifyConfiguration();
 
-        $response = Retry::attempt(
-            fn () => $this->request()
-                ->withHeaders(['Authorization' => $this->manager->secretKey()])
-                ->get("/transaction/{$reference}/verify"),
-            $this->manager,
-        );
+        $response = $this->logged('GET', "/transaction/{$reference}/verify", function (callable $onAttempt) use ($reference) {
+            return Retry::attempt(
+                fn () => $this->request()
+                    ->withHeaders(['Authorization' => $this->manager->secretKey()])
+                    ->get("/transaction/{$reference}/verify"),
+                $this->manager,
+                $onAttempt,
+            );
+        }, fn () => $reference);
 
         return $this->hydrate($response, fn (array $data) => Transaction::fromArray($data));
     }
@@ -70,6 +77,56 @@ class Client
             ->baseUrl($this->manager->baseUrl())
             ->timeout($this->manager->timeout())
             ->acceptJson();
+    }
+
+    /**
+     * Time the call and, when a log channel is configured, write one info
+     * record per finished call (method, path, status, duration, attempts,
+     * transRef when known) and one error record if the connection itself
+     * failed on every attempt. Requests are untouched when logging is off.
+     *
+     * @param  callable(callable): Response  $call
+     * @param  callable(Response): (string|null)|null  $transRefFrom
+     */
+    protected function logged(string $method, string $path, callable $call, ?callable $transRefFrom = null): Response
+    {
+        $logger = $this->manager->logger();
+
+        if ($logger === null) {
+            return $call(fn () => null);
+        }
+
+        $startedAt = microtime(true);
+        $attempts = 0;
+
+        try {
+            $response = $call(function () use (&$attempts) {
+                $attempts++;
+            });
+        } catch (ConnectionException $exception) {
+            $logger->error('Credo API connection failed', [
+                'method' => $method,
+                'path' => $path,
+                'duration_ms' => (int) round((microtime(true) - $startedAt) * 1000),
+                'attempts' => max(1, $attempts),
+                'error' => $exception->getMessage(),
+            ]);
+
+            throw $exception;
+        }
+
+        $transRef = $transRefFrom === null ? null : $transRefFrom($response);
+
+        $logger->info('Credo API request', [
+            'method' => $method,
+            'path' => $path,
+            'status' => $response->status(),
+            'duration_ms' => (int) round((microtime(true) - $startedAt) * 1000),
+            'attempts' => max(1, $attempts),
+            'transRef' => is_string($transRef) && $transRef !== '' ? $transRef : null,
+        ]);
+
+        return $response;
     }
 
     protected function hydrate(Response $response, callable $map): mixed

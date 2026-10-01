@@ -120,4 +120,19 @@ return [
     'retry_max_attempts' => env('CREDO_RETRY_MAX_ATTEMPTS', 3),
     'retry_base_delay_ms' => env('CREDO_RETRY_BASE_DELAY_MS', 1000),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Request Logging
+    |--------------------------------------------------------------------------
+    |
+    | Opt in to logging every API call - method, path, HTTP status, duration
+    | in milliseconds, attempt count and, when known, the Credo transaction
+    | reference (transRef). Set this to a log channel name such as "daily"
+    | or a dedicated "credo" channel from config/logging.php, or leave it
+    | null (CREDO_LOG_CHANNEL=null) to disable logging entirely.
+    |
+    */
+
+    'log_channel' => env('CREDO_LOG_CHANNEL'),
+
 ];
