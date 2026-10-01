@@ -2,10 +2,39 @@
 
 namespace ZoweSoft\LaravelCredo\Data;
 
+use ZoweSoft\LaravelCredo\CredoManager;
 use ZoweSoft\LaravelCredo\Enums\TransactionStatus;
 
+/**
+ * Typed representation of a verified Credo transaction.
+ *
+ * Returned by {@see CredoManager::verify()} and
+ * reconstructed from webhook payloads via
+ * {@see WebhookEvent::transaction()}.
+ *
+ * @see https://docs.credocentral.com/docs/developers/verify-transaction
+ */
 class Transaction
 {
+    /**
+     * @param  string  $credoReference  Credo's internal reference (API field: transRef).
+     * @param  string  $reference  Your business reference (API field: businessRef).
+     * @param  float  $amount  Amount charged in major units (e.g. naira). Note:
+     *                         Credo returns verify/webhook amounts as major-unit
+     *                         floats despite the docs claiming kobo.
+     * @param  float  $debitedAmount  Total amount debited from the customer in major units.
+     * @param  float  $feeAmount  Processing fee in major units.
+     * @param  float|null  $settlementAmount  Amount to be settled to you, or null if not yet settled.
+     * @param  string  $email  Customer email address (API field: customerId).
+     * @param  string  $currency  ISO 4217 currency code, e.g. 'NGN'.
+     * @param  int  $statusCode  Raw integer status from the API. Cast to the
+     *                           {@see TransactionStatus} enum via {@see self::status()}.
+     * @param  string|null  $transactionDate  ISO 8601 datetime string, or null if not yet settled.
+     * @param  array<string, mixed>|null  $metadata  Key-value bag passed at initialize time, or null.
+     * @param  string|null  $paymentMethod  Payment method used, e.g. 'CARD'.
+     * @param  string|null  $paymentMethodType  Payment method sub-type, e.g. 'VISA'.
+     * @param  array<string, mixed>  $raw  Full API response object for forward-compatibility.
+     */
     public function __construct(
         public readonly string $credoReference,
         public readonly string $reference,
@@ -51,11 +80,23 @@ class Transaction
         );
     }
 
+    /**
+     * Cast the raw status code to a {@see TransactionStatus} enum case.
+     *
+     * Returns null when the API returns a code not yet known to this package;
+     * check {@see self::$raw} or {@see self::$statusCode} directly in that case.
+     */
     public function status(): ?TransactionStatus
     {
         return TransactionStatus::tryFrom($this->statusCode);
     }
 
+    /**
+     * Whether the transaction status is {@see TransactionStatus::SUCCESSFUL} (code 0).
+     *
+     * Prefer {@see self::matches()} for a one-call post-payment verification
+     * that also checks amount, currency, and your business reference.
+     */
     public function successful(): bool
     {
         return $this->statusCode === TransactionStatus::SUCCESSFUL->value;
@@ -109,6 +150,12 @@ class Transaction
         return true;
     }
 
+    /**
+     * Retrieve a single value from the metadata bag by key.
+     *
+     * The bag is populated from the `metadata` object passed to the initialize
+     * request. Returns null when the key is absent or no metadata was sent.
+     */
     public function metadataValue(string $key): mixed
     {
         return $this->metadata[$key] ?? null;

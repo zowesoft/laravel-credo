@@ -4,6 +4,17 @@ namespace ZoweSoft\LaravelCredo\Exceptions;
 
 use Illuminate\Http\Client\Response;
 
+/**
+ * Thrown when Credo answers a request with an error.
+ *
+ * Network failures are not this exception - those surface as
+ * Illuminate\Http\Client\ConnectionException once retries are exhausted.
+ * 429 and connection errors are retried automatically with exponential
+ * backoff; other client errors (401, 403, 404, 422) will never succeed
+ * on retry.
+ *
+ * @see https://docs.credocentral.com/docs/developers/error-handling
+ */
 class RequestFailedException extends CredoException
 {
     /**
@@ -18,6 +29,10 @@ class RequestFailedException extends CredoException
         parent::__construct($message, $httpStatus);
     }
 
+    /**
+     * Build the exception from an HTTP response, extracting Credo's message
+     * and error list.
+     */
     public static function fromResponse(Response $response): static
     {
         $body = $response->json();
